@@ -33,9 +33,13 @@ def to_datetime(datetime_string):
 def get_posts(graph, user_id, since, until, limit):
     """Gets all (user timeline) posts from a specified period."""
 
-    query = '{0}/feed?since={1}&until={2}&limit={3}'.format(user_id, since, until, limit)
-    query += '&fields=id,from,to,message,created_time,type'
-    posts = graph.get(query)['data']
+    posts = graph.get(user_id + '/feed',
+        fields = 'id,from,to,message,created_time,type'
+            + ',comments.limit(0).summary(true)'
+            + ',likes.limit(0).summary(true)',
+        since = since,
+        until = until,
+        limit = limit)['data']
 
     # Parses the posts into a more functional format.
     posts = list(map(lambda post: {
@@ -44,7 +48,9 @@ def get_posts(graph, user_id, since, until, limit):
         'author': post['from']['name'],
         'message': post['message'] if 'message' in post else '',
         'has_photo': post['type'] == 'photo',
-        'created_time': to_datetime(post['created_time'])
+        'created_time': to_datetime(post['created_time']),
+        'comment_count': int(post['comments']['summary']['total_count']),
+        'like_count': int(post['likes']['summary']['total_count'])
         }, posts))
 
     # Filters the posts and returns them.
@@ -56,7 +62,7 @@ def reply_to_posts(posts, also_print_to_stdout = False):
 
     for post in posts:
         # Generates a comment based on this post.
-        comment = generate_comment(post['author'], post['message'], post['has_photo'], post['created_time'])
+        comment = generate_comment(post)
 
         # Replies to this post.
         # graph.post(
@@ -65,11 +71,14 @@ def reply_to_posts(posts, also_print_to_stdout = False):
         # )
 
         if also_print_to_stdout:
-            ascii_print('Replied to {0} with "{1}".'.format(post['author'], comment))
+            ascii_print('{0} said: {1}'.format(post['author'], post['message']))
+            ascii_print('You replied: ' + comment)
+            print()
 
 
 def run():
     # Reads the user access token.
+    # Permissions required: 'user_posts', 'user_friends', 'publish_actions'.
     # You can get one from https://developers.facebook.com/tools/explorer.
     access_token = open('access-token.txt').read()
     
