@@ -25,10 +25,10 @@ def to_datetime(datetime_string):
     return datetime.strptime(datetime_string, '%Y-%m-%dT%H:%M:%S+0000')
 
 
-def get_posts(graph, user_id, since, until, limit):
+def get_posts(graph, since, until, limit):
     """Gets all (user timeline) posts from a specified period."""
 
-    posts = graph.get(user_id + '/feed',
+    posts = graph.get('me/feed',
         fields = 'id,from,to,message,created_time,type'
             + ',comments.limit(0).summary(true)'
             + ',likes.limit(0).summary(true)',
@@ -49,7 +49,7 @@ def get_posts(graph, user_id, since, until, limit):
         }, posts))
 
     # Filters the posts and returns them.
-    return filter_posts(user_id, posts)
+    return filter_posts(graph.get('me')['id'], posts)
 
 
 def reply_to_posts(posts, also_print_to_stdout = False):
@@ -80,15 +80,12 @@ def run():
     # Connects to Facebook.
     graph = GraphAPI(access_token)
 
-    # Gets the user id.
-    user_id = graph.get('me')['id']
-
     # Determines the period from which to get the posts.
     since = input('Start Date (e.g. 15february2015): ')
     until = input('End Date (e.g. 4march2015): ')
 
     # Gets the posts from the specified period.
-    posts = get_posts(graph, user_id, since, until, 80)
+    posts = get_posts(graph, since, until, 80)
 
     # Replies to every post and prints the results.
     reply_to_posts(posts, True)
