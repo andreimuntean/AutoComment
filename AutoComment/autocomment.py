@@ -9,11 +9,6 @@ import json
 from datetime import datetime
 from replymanager import filter_posts
 from replymanager import generate_comment
-from sys import path
-
-# Extends the path to load additional dependencies.
-path.insert(0, 'dependencies')
-
 from facepy import GraphAPI
 
 
@@ -91,10 +86,9 @@ def run():
     # Determines the period from which to get the posts.
     since = input('Start Date (e.g. 15february2015): ')
     until = input('End Date (e.g. 4march2015): ')
-    limit = input('Post Limit (e.g. 80): ')
 
     # Gets the posts from the specified period.
-    posts = get_posts(graph, user_id, since, until, limit)
+    posts = get_posts(graph, user_id, since, until, 80)
 
     # Replies to every post and prints the results.
     reply_to_posts(posts, True)
